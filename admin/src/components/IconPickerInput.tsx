@@ -1,60 +1,82 @@
 import React, { useMemo } from 'react';
 import { useIntl, MessageDescriptor, MessageFormatElement } from 'react-intl';
 import { Field, Flex, SingleSelect, SingleSelectOption, Typography } from '@strapi/design-system';
-import BookableSpace from '../icons/BookableSpace';
-import FamilyHistory from '../icons/FamilyHistory';
+import { buildAutoIconOptions, mergeIconOptions, type IconEntry } from '../registry/auto';
+import styled from 'styled-components';
 
 type IntlMessage = MessageDescriptor | string | undefined;
-type IconEntry = { slug: string; label: string; component?: React.ComponentType<any> };
 
 interface Props {
   name: string;
   value?: string | null; // slug
   onChange: (e: { target: { name: string; value: string | null; type?: string } }) => void;
   error?: string | null;
-  description?: IntlMessage;          // allow string/descriptor/undefined
+  description?: IntlMessage;
   required?: boolean;
   labelAction?: React.ReactNode;
-  intlLabel?: IntlMessage;            // allow string/descriptor/undefined
+  intlLabel?: IntlMessage;
   attribute?: {
     options?: {
-      iconList?: string[];            // whitelist
+      iconList?: string[]; // whitelist
+      // if true, ignore auto and use only overrides
+      useOverridesOnly?: boolean;
     };
   };
 }
 
-// ---- Built-in icons (MVP) ----
-export const ICON_OPTIONS: IconEntry[] = [
-  { slug: 'BookableSpace', label: 'BookableSpace', component: BookableSpace },
-  { slug: 'FamilyHistory', label: 'FamilyHistory', component: FamilyHistory },
-];
-
-// Coerce a descriptor.defaultMessage (string or AST) into a plain string
+// --- intl helpers ---
 const defaultMessageToString = (
   dm: string | MessageFormatElement[] | undefined
 ): string | undefined => {
   if (dm == null) return undefined;
   if (typeof dm === 'string') return dm;
-  // best-effort stringify the AST (rarely used in our case)
   return dm
-    .map((el: any) => {
-      if (typeof el === 'string') return el;
-      if (el && typeof el.value !== 'undefined') return String(el.value);
-      return '';
-    })
+    .map((el: any) => (typeof el === 'string' ? el : el?.value != null ? String(el.value) : ''))
     .join('');
 };
-
-// Safe formatter that tolerates strings/undefined or descriptors without id
 const useSafeFormatters = () => {
   const { formatMessage } = useIntl();
   const fmt = (msg: IntlMessage): string | undefined => {
     if (!msg) return undefined;
     if (typeof msg === 'string') return msg;
     if (!('id' in msg) || !msg.id) return defaultMessageToString(msg.defaultMessage);
-    return formatMessage(msg as MessageDescriptor); // always returns string
+    return formatMessage(msg as MessageDescriptor);
   };
   return { fmt, formatMessage };
+};
+
+const SIZE = 20;
+const iconBoxStyle: React.CSSProperties = {
+  width: SIZE,
+  height: SIZE,
+  display: 'inline-flex',
+  position: 'relative',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
+  lineHeight: 0,
+};
+
+const IconBoxStyle = styled.div`
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  line-height: 0;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+  }
+`;
+
+const iconStyle: React.CSSProperties = {
+  maxWidth: '100%',
+  maxHeight: '100%',
 };
 
 const IconOption: React.FC<{ slug: string; label: string; Icon?: React.ComponentType<any> }> = ({
@@ -64,7 +86,7 @@ const IconOption: React.FC<{ slug: string; label: string; Icon?: React.Component
 }) => (
   <SingleSelectOption value={slug}>
     <Flex alignItems="center" gap={2}>
-      {Icon ? <Icon aria-hidden width={20} height={20} /> : null}
+      <IconBoxStyle>{Icon ? <Icon aria-hidden /> : null}</IconBoxStyle>
       <Typography>{label}</Typography>
     </Flex>
   </SingleSelectOption>
@@ -83,12 +105,22 @@ const IconPickerInput: React.FC<Props> = ({
 }) => {
   const { fmt, formatMessage } = useSafeFormatters();
 
+  // 1) Build auto registry once (fast; done at import-time via eager globs)
+  const auto = useMemo(buildAutoIconOptions, []);
+
+  // 2) Merge with optional manual overrides (overrides win by slug)
+  const merged = useMemo(
+    () => mergeIconOptions(auto),
+    [auto, attribute?.options?.useOverridesOnly]
+  );
+
+  // 3) Whitelist if provided
   const iconOptions = useMemo(() => {
     const list = attribute?.options?.iconList;
     return Array.isArray(list) && list.length
-      ? ICON_OPTIONS.filter((o) => list.includes(o.slug))
-      : ICON_OPTIONS;
-  }, [attribute]);
+      ? merged.filter((o) => list.includes(o.slug))
+      : merged;
+  }, [merged, attribute]);
 
   const selected = iconOptions.find((o) => o.slug === value);
 
@@ -101,19 +133,19 @@ const IconPickerInput: React.FC<Props> = ({
       return formatMessage({ id: 'icon-picker.placeholder', defaultMessage: 'Select an icon' });
     }
     const opt = iconOptions.find((o) => o.slug === slug);
+    const Icon = opt?.component;
     return (
       <Flex alignItems="center" gap={2}>
-        {opt?.component ? <opt.component aria-hidden width={20} height={20} /> : null}
+        <div style={iconBoxStyle}>
+          {Icon ? <Icon aria-hidden width={SIZE} height={SIZE} style={iconStyle} /> : null}
+        </div>
         <Typography>{opt?.label ?? slug}</Typography>
       </Flex>
     );
   };
 
-  // Safely compute label & hint with fallbacks
   const labelText =
-    fmt(intlLabel) ??
-    formatMessage({ id: 'icon-picker.field.label', defaultMessage: 'Icon' });
-
+    fmt(intlLabel) ?? formatMessage({ id: 'icon-picker.field.label', defaultMessage: 'Icon' });
   const hintText = fmt(description);
 
   return (
@@ -131,10 +163,8 @@ const IconPickerInput: React.FC<Props> = ({
           id: 'icon-picker.placeholder',
           defaultMessage: 'Select an icon',
         })}
-        // clearLabel={formatMessage({ id: 'icon-picker.clear', defaultMessage: 'Clear icon' })}
         value={selected?.slug ?? ''}
         onChange={(slug: string | undefined) => handleChange(slug ?? null)}
-        // onClear={() => handleChange(null)}
         customizeContent={customizeValue}
       >
         {iconOptions.map(({ slug, label, component }) => (

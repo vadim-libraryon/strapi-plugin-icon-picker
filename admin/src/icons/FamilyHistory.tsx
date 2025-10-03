@@ -1,6 +1,6 @@
 import React from 'react';
 
-const FamilyHistory: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+const FamilyHistory: React.FC<React.SVGProps<SVGSVGElement>> = () => (
   <svg
     width="20"
     height="20"
@@ -11,7 +11,6 @@ const FamilyHistory: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden
-    {...props}
   >
     <circle cx="8" cy="7" r="3" />
     <path d="M2 21c0-3.314 2.686-6 6-6" />
