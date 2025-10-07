@@ -1,5 +1,5 @@
 {
-  "name": "strapi-plugin-icon-picker",
+  "name": "@vadim-libraryon/strapi-plugin-icon-picker",
   "version": "0.1.0",
   "description": "Icon picker custom field for Strapi v5 (auto-discovers React/SVG icons).",
   "license": "MIT",
