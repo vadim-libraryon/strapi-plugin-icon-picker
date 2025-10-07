@@ -2,5 +2,10 @@
   "icon-picker.field.label": "Icon",
   "icon-picker.field.description": "Choose an icon",
   "icon-picker.placeholder": "Select an icon",
-  "icon-picker.clear": "Clear icon"
+  "icon-picker.clear": "Clear icon",
+  "icon-picker.options.section": "Icon Picker",
+  "icon-picker.options.grid": "Grid mode (tiles)",
+  "icon-picker.options.grid.hint": "Show icons as clickable tiles instead of a dropdown.",
+  "icon-picker.options.search": "Search input",
+  "icon-picker.options.search.hint": "Show a search box to filter icons."
 }

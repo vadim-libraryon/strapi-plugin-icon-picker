@@ -131,12 +131,16 @@ If you add additional Heroicons in your project (via `@heroicons/react` or copyi
 
 ## Options
 
+- `grid` (boolean, default **false**) — render icons as a **tile grid** instead of a dropdown.
+- `search` (boolean, default **false**) — show a search box to filter icons (works in both modes).
+
 Per-field in schema:
 
 ```json
 "options": {
-  "iconList": ["ArrowRight", "Envelope"],
-  "useOverridesOnly": false
+  "grid": true,
+  "search": true,
+  "iconList": ["Home", "Search", "Bell"]
 }
 ```
 

@@ -25,6 +25,35 @@ export default {
           return { default: mod.default } as any;
         },
       },
+      options: {
+        advanced: [
+          {
+            sectionTitle: { id: `${PLUGIN_ID}.options.section`, defaultMessage: 'Icon Picker' },
+            items: [
+              {
+                name: 'options.grid',
+                type: 'checkbox',
+                intlLabel: { id: `${PLUGIN_ID}.options.grid`, defaultMessage: 'Grid mode (tiles)' },
+                intlDescription: {
+                  id: `${PLUGIN_ID}.options.grid.hint`,
+                  defaultMessage: 'Show icons as clickable tiles instead of a dropdown.',
+                },
+                defaultValue: false,
+              },
+              {
+                name: 'options.search',
+                type: 'checkbox',
+                intlLabel: { id: `${PLUGIN_ID}.options.search`, defaultMessage: 'Search input' },
+                intlDescription: {
+                  id: `${PLUGIN_ID}.options.search.hint`,
+                  defaultMessage: 'Show a search box to filter icons.',
+                },
+                defaultValue: false,
+              },
+            ],
+          },
+        ],
+      },
     });
   },
 
